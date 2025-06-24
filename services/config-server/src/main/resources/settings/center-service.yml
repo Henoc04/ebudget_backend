@@ -1,0 +1,23 @@
+server:
+  port: 8050
+spring:
+  application:
+    name: center-service
+  datasource:
+    url: jdbc:postgresql://ms_ps_sql:5432/center
+#    url: jdbc:postgresql://localhost:5432/center
+    username: postgres
+    password: root
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    database: postgresql
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+  flyway:
+    baseline-on-migrate: true
+    enabled: true
+    baseline-description: "init"
+    baseline-version: 0
+    user: ${spring.datasource.username}
+    password: ${spring.datasource.password}

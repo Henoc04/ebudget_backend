@@ -1,0 +1,28 @@
+server:
+  port: 8222
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+#          issuer-uri: "http://localhost:9098/realms/micro-services"
+          issuer-uri: "http://keycloak-ms:8080/realms/micro-services"
+  config:
+    import: optional:configserver:http://config-server:8888
+#    import: optional:configserver:http://localhost:8888
+  application:
+    name: gateway-service
+
+
+
+eureka:
+  instance:
+    prefer-ip-address: true
+#    hostname: localhost
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: http://discovery-server:8761/eureka/
+#      defaultZone: http://${eureka.instance.hostname}:${server.port}/eureka/
+

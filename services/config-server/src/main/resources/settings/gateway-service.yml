@@ -1,0 +1,40 @@
+server:
+  port: 8222
+spring:
+  cloud:
+    discovery:
+      enabled: true
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true
+      routes:
+        - id: center-service
+          uri: lb://CENTER-SERVICE
+          predicates:
+            - Path=/api/v1/centers/**
+        - id: budget-budgets
+          uri: lb://BUDGET-SERVICE
+          predicates:
+            - Path=/api/v1/budgets/**
+        - id: budget-financing
+          uri: lb://BUDGET-SERVICE
+          predicates:
+            - Path=/api/v1/financing/**
+        - id: budget-nomenclatures
+          uri: lb://BUDGET-SERVICE
+          predicates:
+            - Path=/api/v1/nomenclatures/**
+        - id: budget-categories
+          uri: lb://BUDGET-SERVICE
+          predicates:
+            - Path=/api/v1/nomenclatures/categories/**
+        - id: budget-subactivities
+          uri: lb://BUDGET-SERVICE
+          predicates:
+            - Path=/api/v1/subactivities/**
+        - id: budget-activities
+          uri: lb://BUDGET-SERVICE
+          predicates:
+            - Path=/api/v1/activities/**

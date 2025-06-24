@@ -1,0 +1,28 @@
+server:
+  port: 8060
+spring:
+  application:
+    name: budget-service
+  datasource:
+    url: jdbc:postgresql://ms_ps_sql:5432/budget
+#    url: jdbc:postgresql://localhost:5432/budget
+    username: postgres
+    password: root
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    database: postgresql
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+  flyway:
+    baseline-on-migrate: true
+    enabled: true
+    baseline-description: "init"
+    baseline-version: 0
+    user: ${spring.datasource.username}
+    password: ${spring.datasource.password}
+
+application:
+  config:
+    center-url: http://center-service:8050/api/v1/centers
+#    center-url: http://localhost:8050/api/v1/centers

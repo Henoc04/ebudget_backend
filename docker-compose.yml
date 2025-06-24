@@ -1,0 +1,182 @@
+version: '3'
+services:
+  postgres:
+    container_name: ms_ps_sql
+    image: postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      PGDATA: /var/lib/postgresql/data
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    networks:
+      - ebudget-microservice-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "htt://localhost:5432"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  pgadmin:
+    container_name: ms_pg_admin
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-pgadmin@pgadmin.org}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin}
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    volumes:
+      - pgadmin:/var/lib/pgadmin
+    ports:
+      - "${PGADMIN_PORT}:80"
+    networks:
+      - ebudget-microservice-net
+    depends_on:
+      - postgres
+
+  config-server:
+    container_name: config-server
+    build:
+      context: ./services/config-server
+    image: config-server
+    ports:
+      - "${CONFIG_SERVER_PORT}:8888"
+    networks:
+      - ebudget-microservice-net
+    depends_on:
+      - pgadmin
+
+  discovery-server:
+    container_name: discovery-server
+    build:
+      context: ./services/discovery
+    image: discovery-server
+    ports:
+      - "${DISCOVERY_SERVER_PORT}:8761"
+    networks:
+      - ebudget-microservice-net
+    restart: on-failure
+    depends_on:
+      - config-server
+    environment:
+      - SPRING_PROFILES_ACTIVE=native
+
+  gateway-service:
+    container_name: gateway-service
+    build:
+      context: ./services/gateway
+    image: gateway-service
+    ports:
+      - "${GATEWAY_SERVICE_PORT}:8222"
+    restart: on-failure
+    networks:
+      - ebudget-microservice-net
+    depends_on:
+      - config-server
+      - discovery-server
+      - center-service
+      - budget-service
+    environment:
+      - SPRING_PROFILES_ACTIVE=native
+
+  center-service:
+    container_name: center-service
+    build:
+      context: ./services/center
+    image: center-service
+    ports:
+      - "${CENTER_SERVICE_PORT}:8050"
+    restart: on-failure
+    networks:
+      - ebudget-microservice-net
+    depends_on:
+      - discovery-server
+    environment:
+      - SPRING_PROFILES_ACTIVE=native
+
+  budget-service:
+    container_name: budget-service
+    build:
+      context: ./services/budget
+    image: budget-service
+    ports:
+      - "${BUDGET_SERVICE_PORT}:8060"
+    restart: on-failure
+    networks:
+      - ebudget-microservice-net
+    depends_on:
+      - discovery-server
+    environment:
+      - SPRING_PROFILES_ACTIVE=native
+
+
+  #  zookeeper:
+  #    image: confluentinc/cp-zookeeper:latest
+  #    container_name: zookeeper
+  #    environment:
+  #      ZOOKEEPER_SERVER_ID: 1
+  #      ZOOKEEPER_CLIENT_PORT: 2181
+  #      ZOOKEEPER_TICK_TIME: 2000
+  #    ports:
+  #      - 2181:2181
+  #    networks:
+  #      - microservices-net
+  #
+  #  kafka:
+  #    image: confluentinc/cp-kafka:latest
+  #    container_name: ms_kafka
+  #    ports:
+  #      - 9092:9092
+  #    depends_on:
+  #      - zookeeper
+  #    environment:
+  #      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+  #      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+  #      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+  #      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+  #      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+  #      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+  #    networks:
+  #      - microservices-net
+  #
+  #  mail-dev:
+  #    container_name: ms_mail_dev
+  #    image: maildev/maildev
+  #    ports:
+  #      - 1080:1080
+  #      - 1025:1025
+  #
+  #  zipkin:
+  #    container_name: zipkin
+  #    image: openzipkin/zipkin
+  #    ports:
+  #      - 9411:9411
+  #    networks:
+  #      - microservices-net
+
+
+  keycloak-ms:
+    container_name: keycloak-ms
+    image: quay.io/keycloak/keycloak:latest
+    ports:
+      - "${KEYCLOAK_PORT}:8080"
+    environment:
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+    networks:
+      - ebudget-microservice-net
+    command:
+      - "start-dev"
+    volumes:
+      - keycloak_data:/opt/keycloak/data
+
+networks:
+  ebudget-microservice-net:
+    driver: bridge
+
+volumes:
+  postgres:
+  pgadmin:
+  keycloak_data:
